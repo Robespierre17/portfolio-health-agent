@@ -1,0 +1,37 @@
+[
+  {
+    "id": "gqa-001",
+    "question": "What is the health score for portfolio 1?",
+    "expected_tool_calls": ["get_health_score"],
+    "expected_answer_contains": ["score", "features"],
+    "milestone": 2
+  },
+  {
+    "id": "gqa-002",
+    "question": "What holdings does portfolio 1 have?",
+    "expected_tool_calls": ["query_holdings"],
+    "expected_answer_contains": ["ticker", "weight"],
+    "milestone": 2
+  },
+  {
+    "id": "gqa-003",
+    "question": "My portfolio has a Sharpe ratio of 0.3 — is that good?",
+    "expected_tool_calls": ["explain_feature"],
+    "expected_answer_contains": ["Sharpe", "0.3"],
+    "milestone": 2
+  },
+  {
+    "id": "gqa-004",
+    "question": "How should I rebalance portfolio 1 to improve its health score to 80?",
+    "expected_tool_calls": ["get_health_score", "suggest_rebalance"],
+    "expected_answer_contains": ["rebalance", "weight"],
+    "milestone": 2
+  },
+  {
+    "id": "gqa-005",
+    "question": "Why is the concentration risk high in portfolio 2?",
+    "expected_tool_calls": ["query_holdings", "explain_feature"],
+    "expected_answer_contains": ["concentration", "HHI"],
+    "milestone": 2
+  }
+]

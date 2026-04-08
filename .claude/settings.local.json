@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/bin/pip install:*)",
+      "Bash(brew install:*)",
+      "Bash(.venv/bin/python -m src.ml.train 2>&1)",
+      "Bash(.venv/bin/pytest tests/unit/ -v 2>&1)",
+      "Bash(.venv/bin/alembic init:*)",
+      "Bash(.venv/bin/alembic revision:*)",
+      "Bash(.venv/bin/pytest tests/unit/test_tools.py tests/integration/test_agent_loop.py -v 2>&1)",
+      "Bash(.venv/bin/alembic upgrade:*)",
+      "Bash(psql:*)"
+    ]
+  }
+}
