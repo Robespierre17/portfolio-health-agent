@@ -42,6 +42,10 @@ models/*.bin
 .DS_Store
 Thumbs.db
 
+# Eval run outputs
+eval_runs/*/
+!eval_runs/.gitkeep
+
 # Docker
 *.log
 

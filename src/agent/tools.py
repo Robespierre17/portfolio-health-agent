@@ -227,6 +227,9 @@ async def suggest_rebalance(
         return {
             "portfolio_id": portfolio_id,
             "current_score": current_score,
+            "target_score": target_score,
+            "target_reachable": True,
+            "best_achievable_score": current_score,
             "message": f"Portfolio already meets target score of {target_score}.",
             "suggestions": [],
         }
@@ -238,12 +241,15 @@ async def suggest_rebalance(
     # Project score after applying suggestions
     projected_weights = _apply_suggestions(weights, suggestions)
     projected = score_portfolio(prices, projected_weights)
+    projected_score = projected["score"]
 
     return {
         "portfolio_id": portfolio_id,
         "current_score": current_score,
-        "projected_score": projected["score"],
+        "projected_score": projected_score,
         "target_score": target_score,
+        "target_reachable": projected_score >= target_score,
+        "best_achievable_score": projected_score,
         "suggestions": suggestions,
         "projected_weights": projected_weights,
     }
