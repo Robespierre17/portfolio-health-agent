@@ -22,7 +22,8 @@ coverage.xml
 .env.local
 .env.*.local
 
-# Data & Models (large files)
+# Data & Models (large files — ignore by default, but committed artifacts are
+# explicitly un-ignored below so `railway up` includes them in the upload)
 data/*.csv
 data/*.parquet
 data/*.pkl
@@ -31,6 +32,9 @@ models/*.ubj
 models/*.bin
 !data/.gitkeep
 !models/.gitkeep
+# Committed model artifacts needed for Railway Docker build — must NOT be ignored
+!models/health_scorer.ubj
+!models/feature_baseline.parquet
 
 # IDE
 .vscode/
