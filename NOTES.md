@@ -86,6 +86,46 @@ pinning so model and code can be updated independently and rolled back
 separately. The `entrypoint.sh` GCS pull path is already implemented —
 it activates whenever `GCS_BUCKET` is set in the environment.
 
+## Lessons learned from M5
+
+The frontend itself took half a day. Getting the Railway backend to actually serve it took
+another two days of incremental debugging. Every issue was a filesystem assumption that
+worked locally but failed in the container.
+
+1. **The default Dockerfile build target is the last stage, not the one you named "prod."**
+   We had `builder → prod → dev` and Railway (correctly) built `dev` — the final stage.
+   Fix: reorder to `builder → dev → prod` so prod is last. Alternatively, set
+   `buildTarget` in a `railway.toml`. The lesson: "default" means last-in-file, not
+   most-intuitively-named.
+
+2. **`railway up` respects `.gitignore` for its upload, not `.dockerignore`.**
+   Adding a `.dockerignore` that un-excluded `models/*.ubj` did nothing because the file
+   was stripped before it even left the local machine. The giveaway was a constant build
+   context hash (`90kv-sKOm`) across every upload — same hash = same files = gitignore
+   exclusions still in effect. Negation rules in `.gitignore` (`!models/health_scorer.ubj`)
+   are also silently ignored by the Railway CLI. Only removing `models/*.ubj` from
+   `.gitignore` entirely solved it.
+
+3. **The prod stage was missing `COPY alembic/ ./alembic/`.**
+   `alembic.ini` was copied but the `alembic/` directory containing the migration scripts
+   was not. Alembic's own error message — "Path doesn't exist: /app/alembic. Please use
+   the 'init' command" — made this obvious once we were past the model issue.
+
+4. **The production database needs to be seeded separately.**
+   The CI seed script (`scripts/seed_ci_data.py`) runs in the CI environment against
+   a throwaway Postgres container. The Railway Postgres starts empty. Fix: `railway run
+   python -m scripts.seed_ci_data` injects the production `DATABASE_URL` and seeds in
+   place. Document this as a required first-deploy step, not an afterthought.
+
+**Takeaway:** "works locally" and "works in a container" are two different things, and
+the gap is almost always filesystem assumptions — files that exist on your laptop because
+you ran a script once, files excluded by ignore rules you forgot about, directories that
+are mounted as volumes locally but must be `COPY`-ed in prod. The debugging loop is:
+run, read the crash, find the missing file, trace why it's missing (gitignore? wrong
+stage? missing COPY?), fix one thing, redeploy. Budget time for this on every project
+that ships containers.
+
+
 ## Calibration backtest (deferred, M4)
 
 Walk-forward backtest: slide a 90-day window over historical portfolio snapshots, score

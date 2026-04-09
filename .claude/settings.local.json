@@ -13,7 +13,13 @@
       "Bash(.venv/bin/python -m scripts.run_eval --ids G2 2>&1)",
       "Bash(.venv/bin/python -m scripts.run_eval 2>&1)",
       "Bash(ruff check:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(source:*)",
+      "Bash(which railway:*)",
+      "Bash(npm install:*)",
+      "Bash(railway:*)",
+      "Bash(railway link:*)",
+      "Bash(git push:*)"
     ]
   }
 }
