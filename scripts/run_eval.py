@@ -2,7 +2,9 @@
 CLI entry point for the eval harness.
 
 Usage:
-    python -m scripts.run_eval                        # all 31 cases
+    python -m scripts.run_eval                        # all 31 cases (full tier)
+    python -m scripts.run_eval --tier smoke           # 5 smoke cases, gate ≥80%
+    python -m scripts.run_eval --tier full            # all 31 cases, gate ≥85%
     python -m scripts.run_eval --ids A1 B3 F1         # specific cases
     python -m scripts.run_eval --categories A B       # specific categories
     python -m scripts.run_eval --dry-run              # print cases, no API calls
@@ -30,23 +32,51 @@ logger = logging.getLogger(__name__)
 GOLDEN_QA_PATH = Path("tests/eval/golden_qa.json")
 EVAL_RUNS_DIR  = Path("eval_runs")
 
+# Representative cases covering each major capability area.
+# Chosen to be fast (~2 min) while catching the most common regressions.
+SMOKE_CASE_IDS: list[str] = ["A1", "B1", "D1", "F1", "E1"]
 
-def load_cases(ids: list[str] | None, categories: list[str] | None) -> list[dict]:
-    cases = json.loads(GOLDEN_QA_PATH.read_text())
+TIER_CONFIG: dict[str, dict] = {
+    "smoke": {"case_ids": SMOKE_CASE_IDS, "pass_rate_threshold": 0.80},
+    "full":  {"case_ids": None,           "pass_rate_threshold": 0.85},
+}
+
+
+def load_cases(
+    tier: str,
+    ids: list[str] | None,
+    categories: list[str] | None,
+) -> tuple[list[dict], float]:
+    """Return (cases, pass_rate_threshold).
+
+    --tier restricts the default case set; --ids / --categories further filter it.
+    If --ids or --categories are provided they take precedence over the tier preset.
+    """
+    all_cases = json.loads(GOLDEN_QA_PATH.read_text())
+    cfg = TIER_CONFIG[tier]
+
+    # Tier preset (only applied when no explicit id/category filter given)
+    if not ids and not categories and cfg["case_ids"] is not None:
+        all_cases = [c for c in all_cases if c["id"] in cfg["case_ids"]]
+
     if ids:
-        cases = [c for c in cases if c["id"] in ids]
+        all_cases = [c for c in all_cases if c["id"] in ids]
     if categories:
-        cases = [c for c in cases if c["category"] in categories]
-    return cases
+        all_cases = [c for c in all_cases if c["category"] in categories]
+
+    return all_cases, cfg["pass_rate_threshold"]
 
 
 async def main(args: argparse.Namespace) -> int:
-    cases = load_cases(args.ids, args.categories)
+    cases, pass_rate_threshold = load_cases(args.tier, args.ids, args.categories)
     if not cases:
         logger.error("No cases matched the given filters.")
         return 1
 
-    logger.info("Loaded %d cases.", len(cases))
+    logger.info(
+        "Tier: %s | Cases: %d | Pass-rate gate: %.0f%%",
+        args.tier, len(cases), pass_rate_threshold * 100,
+    )
 
     if args.dry_run:
         for c in cases:
@@ -76,13 +106,14 @@ async def main(args: argparse.Namespace) -> int:
     results_file.close()
 
     # ── Summary ───────────────────────────────────────────────────────────
-    summary = build_summary(results, run_id)
+    summary = build_summary(results, run_id, pass_rate_threshold=pass_rate_threshold)
     summary_path.write_text(json.dumps(summary, indent=2))
 
     # ── Print summary to stdout ───────────────────────────────────────────
     print("\n" + "=" * 60)
-    print(f"  Run: {run_id}")
+    print(f"  Run:       {run_id}  [{args.tier} tier]")
     print(f"  Total:     {summary['passed']}/{summary['total']} passed  ({summary['pass_rate']*100:.1f}%)")
+    print(f"  Gate:      ≥{pass_rate_threshold*100:.0f}%")
     print(f"  Tool corr: {summary['ci_tool_correctness_rate']*100:.1f}%")
     print(f"  Faith avg: {summary['faithfulness_avg']}")
     print(f"  CI gate:   {'✓ MET' if summary['ci_gate_met'] else '✗ NOT MET'}")
@@ -110,6 +141,12 @@ async def main(args: argparse.Namespace) -> int:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the portfolio agent eval harness.")
+    parser.add_argument(
+        "--tier",
+        choices=["smoke", "full"],
+        default="full",
+        help="smoke: 5 representative cases, gate ≥80%%; full: all 31 cases, gate ≥85%% (default)",
+    )
     parser.add_argument("--ids",        nargs="*", help="Specific case IDs to run")
     parser.add_argument("--categories", nargs="*", help="Categories to run (A B C D E F G)")
     parser.add_argument("--dry-run",    action="store_true", help="Print cases without running")

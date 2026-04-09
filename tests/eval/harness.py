@@ -253,7 +253,7 @@ async def run_eval(
     return results
 
 
-def build_summary(results: list[dict], run_id: str) -> dict:
+def build_summary(results: list[dict], run_id: str, pass_rate_threshold: float = 0.85) -> dict:
     total = len(results)
     passed = sum(1 for r in results if r["eval"]["verdict"] == "PASS")
 
@@ -295,7 +295,7 @@ def build_summary(results: list[dict], run_id: str) -> dict:
         "passed": passed,
         "pass_rate": round(passed / total, 3),
         "ci_tool_correctness_rate": round(tool_correct / total, 3),
-        "ci_gate_met": (tool_correct == total) and (passed / total >= 0.85),
+        "ci_gate_met": (tool_correct == total) and (passed / total >= pass_rate_threshold),
         "faithfulness_avg": faith_avg,
         "per_category": per_category,
         "failures": failures,
