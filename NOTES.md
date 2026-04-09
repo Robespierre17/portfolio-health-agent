@@ -44,6 +44,18 @@ The `models/feature_baseline.parquet` saved during training represents the synth
 training distribution. When real portfolio data accumulates, re-fit the baseline on the
 first N production observations before enabling PSI alerting.
 
+## Model artifact strategy (M4)
+
+The prod Docker image bakes in `models/health_scorer.ubj` and
+`models/feature_baseline.parquet` at build time via `COPY models/`.
+This keeps deployment simple (no external storage dependency) at the
+cost of a larger image and a full redeploy for every model update.
+
+**Future milestone:** move artifacts to S3 or GCS with `MODEL_VERSION`
+pinning so model and code can be updated independently and rolled back
+separately. The `entrypoint.sh` GCS pull path is already implemented —
+it activates whenever `GCS_BUCKET` is set in the environment.
+
 ## Calibration backtest (deferred, M4)
 
 Walk-forward backtest: slide a 90-day window over historical portfolio snapshots, score

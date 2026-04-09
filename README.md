@@ -10,7 +10,7 @@ and suggest rebalancing actions.
 
 ```
                 ┌──────────────────────────────────────────────────┐
-                │                  FastAPI (Cloud Run)              │
+                │                  FastAPI (Railway)                │
                 │                                                  │
   User ──────►  │  /agent/chat  ──►  LLM Agent (Claude)           │
                 │                        │                         │
@@ -75,12 +75,13 @@ and suggest rebalancing actions.
 - [ ] CI step that gates on eval pass rate ≥ 90%
 
 ### M4 — Deploy + Monitor
-- [ ] Docker + Cloud Run deployment (GitHub Actions CI/CD)
+- [x] Multi-stage Dockerfile (builder → prod → dev)
+- [x] Two-tier eval in CI (smoke on PR, full on merge)
+- [x] Railway deployment — full eval gates every merge to main
 - [ ] Prometheus `/metrics` + Grafana dashboard
 - [ ] PSI alerts for feature drift
 - [ ] Score distribution shift detection
 - [ ] Token cost tracking per request
-- [ ] Alembic migration automation in deploy step
 
 ---
 
@@ -110,6 +111,45 @@ Or with full Docker Compose:
 ```bash
 docker-compose up --build
 ```
+
+---
+
+## Deploying to Railway
+
+### First-time setup (Railway dashboard)
+
+1. New project → **Deploy from GitHub repo** → select this repo
+2. Service settings → **Build** — Dockerfile is auto-detected; no target needed (prod is the default stage)
+3. Service settings → **Deploy** — disable "Deploy on push" (CI controls deploys)
+4. Add a **PostgreSQL** database service to the project
+5. Set these environment variables on the API service:
+
+| Variable | Value |
+|----------|-------|
+| `APP_ENV` | `production` |
+| `ANTHROPIC_API_KEY` | `sk-ant-...` |
+| `ANTHROPIC_MODEL` | `claude-sonnet-4-6` |
+| `DATABASE_URL` | Copy Railway's injected Postgres URL, change `postgresql://` → `postgresql+asyncpg://` |
+| `MODEL_VERSION` | `v1.0.0` |
+
+### CI/CD
+
+Merges to `main` run the full eval (31 cases, ≥85% pass rate + 100% tool correctness). If the gate passes, the workflow deploys automatically via the Railway CLI.
+
+Add these secrets in repo **Settings → Secrets and variables → Actions**:
+
+| Secret | Where to find it |
+|--------|-----------------|
+| `RAILWAY_TOKEN` | Railway dashboard → Account settings → Tokens |
+| `RAILWAY_PROJECT_ID` | Railway project → Settings → General → Project ID |
+| `RAILWAY_SERVICE_ID` | Railway API service → Settings → Service ID |
+| `ANTHROPIC_API_KEY` | Used by the eval job in CI |
+
+### Updating the model
+
+Retrain locally, commit the new `models/` artifacts, open a PR. The smoke eval gates the PR; the full eval + Railway deploy run on merge.
+
+> **Future:** move artifacts to S3/GCS with `MODEL_VERSION` pinning so model and code deploy independently. See `NOTES.md`.
 
 ---
 

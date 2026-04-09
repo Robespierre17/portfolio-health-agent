@@ -100,63 +100,26 @@ jobs:
       - name: Full eval (gate ≥85%, tool correctness 100%)
         run: python -m scripts.run_eval --tier full
 
-  build-push:
-    runs-on: ubuntu-latest
-    needs: full-eval
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - id: auth
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
-      - uses: google-github-actions/setup-gcloud@v2
-
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
-
-      - name: Build and push prod image
-        env:
-          IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/portfolio-health/api:${{ github.sha }}
-        run: |
-          docker build --target prod -t "$IMAGE" .
-          docker push "$IMAGE"
-
   deploy:
     runs-on: ubuntu-latest
-    needs: build-push
-    permissions:
-      contents: read
-      id-token: write
+    needs: full-eval
+    # Required secrets: RAILWAY_TOKEN, RAILWAY_PROJECT_ID, RAILWAY_SERVICE_ID
+    # Set these in repo Settings → Secrets and variables → Actions.
+    # RAILWAY_PROJECT_ID: Settings → General → Project ID (UUID) in Railway dashboard.
+    # RAILWAY_SERVICE_ID: the API service → Settings → Service ID in Railway dashboard.
 
     steps:
       - uses: actions/checkout@v4
 
-      - id: auth
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
 
-      - uses: google-github-actions/setup-gcloud@v2
-
-      - name: Deploy to Cloud Run
+      - name: Deploy to Railway
         env:
-          IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/portfolio-health/api:${{ github.sha }}
-          # MODEL_VERSION is a repository variable (not secret) for rollback auditability.
-          # Override: MODEL_VERSION=v1.2.0 gh workflow run ci-main.yml
-          MODEL_VERSION: ${{ vars.MODEL_VERSION }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          gcloud run deploy portfolio-health-agent \
-            --image "$IMAGE" \
-            --region "${{ secrets.GCP_REGION }}" \
-            --platform managed \
-            --allow-unauthenticated \
-            --set-env-vars "APP_ENV=production,MODEL_VERSION=${MODEL_VERSION}" \
-            --set-secrets "ANTHROPIC_API_KEY=anthropic-api-key:latest,DATABASE_URL=database-url:latest,GCS_BUCKET=gcs-bucket:latest"
+          railway up \
+            --project ${{ secrets.RAILWAY_PROJECT_ID }} \
+            --service ${{ secrets.RAILWAY_SERVICE_ID }} \
+            --environment production \
+            --detach
