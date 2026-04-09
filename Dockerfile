@@ -18,9 +18,32 @@ COPY src/ ./src/
 RUN pip wheel --wheel-dir /wheels .
 
 
-# ── Stage 2: prod ─────────────────────────────────────────────────────────────
-# Non-root user, no dev deps. Default stage — used by Railway and plain
-# `docker build .` with no --target flag.
+# ── Stage 2: dev ──────────────────────────────────────────────────────────────
+# Editable install, all dev deps, runs as root — for local docker-compose only.
+# Selected explicitly via `docker compose up` (target: dev in docker-compose.yml).
+FROM python:3.9-slim AS dev
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+COPY pyproject.toml ./
+RUN pip install --upgrade pip && pip install -e ".[dev]"
+
+COPY src/ ./src/
+COPY alembic.ini ./
+# models/ mounted as a volume in docker-compose so the local artifact is used
+
+EXPOSE 8080
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
+
+
+# ── Stage 3: prod ─────────────────────────────────────────────────────────────
+# Non-root user, no dev deps. Final/default stage — used by Railway and plain
+# `docker build .` with no --target flag. Must remain LAST so Docker's default
+# build target resolves to prod.
 # Model artifact is baked in at build time (see COPY models/ below).
 # Set GCS_BUCKET to pull a versioned artifact from GCS instead (entrypoint.sh
 # skips the pull when GCS_BUCKET is unset).
@@ -56,25 +79,3 @@ USER appuser
 
 EXPOSE 8080
 ENTRYPOINT ["./entrypoint.sh"]
-
-
-# ── Stage 3: dev ──────────────────────────────────────────────────────────────
-# Editable install, all dev deps, runs as root — for local docker-compose only.
-# Selected explicitly via `docker compose up` (target: dev in docker-compose.yml).
-FROM python:3.9-slim AS dev
-
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1
-
-WORKDIR /app
-
-COPY pyproject.toml ./
-RUN pip install --upgrade pip && pip install -e ".[dev]"
-
-COPY src/ ./src/
-COPY alembic.ini ./
-# models/ mounted as a volume in docker-compose so the local artifact is used
-
-EXPOSE 8080
-CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
