@@ -39,6 +39,12 @@ agent_latency_seconds = Histogram(
     buckets=[0.5, 1, 2, 5, 10, 20, 30, 60],
 )
 
+agent_turns_histogram = Histogram(
+    "agent_turns",
+    "Number of LLM API calls (turns) per agent request",
+    buckets=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+)
+
 # ── Drift (updated by the PSI drift job — Step 7) ────────────────────────────
 
 feature_psi = Gauge(

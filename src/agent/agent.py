@@ -26,6 +26,7 @@ from src.monitoring.prometheus import (
     agent_latency_seconds,
     agent_tool_calls_total,
     agent_tokens_total,
+    agent_turns_histogram,
 )
 
 logger = logging.getLogger(__name__)
@@ -93,7 +94,7 @@ async def run_agent(
 
         if response.stop_reason == "end_turn":
             answer = _extract_text(response.content)
-            _record_metrics(t0, total_input_tokens, total_output_tokens)
+            _record_metrics(t0, total_input_tokens, total_output_tokens, turns=turn + 1)
             return {
                 "answer": answer,
                 "tool_calls": tool_call_log,
@@ -129,7 +130,7 @@ async def run_agent(
         logger.warning("Unexpected stop_reason: %s", response.stop_reason)
         break
 
-    _record_metrics(t0, total_input_tokens, total_output_tokens)
+    _record_metrics(t0, total_input_tokens, total_output_tokens, turns=turn + 1)
     return {
         "answer": "Agent reached maximum turns without a final answer.",
         "tool_calls": tool_call_log,
@@ -137,10 +138,11 @@ async def run_agent(
     }
 
 
-def _record_metrics(t0: float, input_tokens: int, output_tokens: int) -> None:
+def _record_metrics(t0: float, input_tokens: int, output_tokens: int, turns: int = 1) -> None:
     agent_latency_seconds.observe(time.monotonic() - t0)
     agent_tokens_total.labels(direction="input").inc(input_tokens)
     agent_tokens_total.labels(direction="output").inc(output_tokens)
+    agent_turns_histogram.observe(turns)
 
 
 def _extract_text(content: list) -> str:

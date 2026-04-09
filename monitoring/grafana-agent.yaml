@@ -1,0 +1,52 @@
+# Grafana Agent — scrapes Railway /metrics and remote-writes to Grafana Cloud.
+#
+# Prerequisites (Grafana Cloud free tier):
+#   1. Create a Grafana Cloud account at grafana.com/auth/sign-up
+#   2. In your Grafana Cloud stack → Prometheus → "Details" — copy:
+#        Remote Write URL   → GRAFANA_CLOUD_METRICS_URL
+#        Username           → GRAFANA_CLOUD_METRICS_USER  (numeric ID)
+#   3. In Access Policies → create a token with "metrics:write" scope
+#        → GRAFANA_CLOUD_API_KEY
+#   4. Your Railway app URL (e.g. https://my-app.up.railway.app)
+#        → RAILWAY_APP_HOST  (hostname only, no scheme or path)
+#
+# Run with Docker (set the four env vars first):
+#   docker run \
+#     -e GRAFANA_CLOUD_METRICS_URL \
+#     -e GRAFANA_CLOUD_METRICS_USER \
+#     -e GRAFANA_CLOUD_API_KEY \
+#     -e RAILWAY_APP_HOST \
+#     -v $(pwd)/monitoring/grafana-agent.yaml:/etc/agent/agent.yaml \
+#     grafana/agent:latest \
+#     run /etc/agent/agent.yaml
+#
+# Or add it as a second service on Railway itself (no separate compute needed):
+#   - Dockerfile: FROM grafana/agent:latest
+#   - Start command: run /etc/agent/agent.yaml
+#   - Mount this file or bake it into the image
+
+metrics:
+  global:
+    scrape_interval: 60s
+
+  configs:
+    - name: portfolio-health
+      scrape_configs:
+        - job_name: portfolio-health-agent
+          scheme: https
+          metrics_path: /metrics
+          static_configs:
+            - targets:
+                - "${RAILWAY_APP_HOST}"
+              labels:
+                env: production
+                service: portfolio-health-agent
+
+      remote_write:
+        - url: "${GRAFANA_CLOUD_METRICS_URL}"
+          basic_auth:
+            username: "${GRAFANA_CLOUD_METRICS_USER}"
+            password: "${GRAFANA_CLOUD_API_KEY}"
+          queue_config:
+            max_samples_per_send: 1000
+            batch_send_deadline: 5s
