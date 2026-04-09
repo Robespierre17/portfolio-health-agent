@@ -48,6 +48,7 @@ RUN chmod +x entrypoint.sh
 # Bake model artifact into the image so no external storage is needed at runtime.
 # To upgrade the model: retrain, commit the new files, redeploy.
 COPY models/ ./models/
+RUN ls -la models/
 
 RUN chown -R appuser:appgroup /app
 

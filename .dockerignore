@@ -1,0 +1,57 @@
+# Exclude dev/test artefacts that don't belong in the production image.
+# IMPORTANT: this file takes precedence over .gitignore for Docker build context,
+# so model artefacts committed via `git add -f` are NOT excluded here.
+
+# Python byte-code & caches
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+*.whl
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE / OS noise
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Frontend (not needed in backend image)
+frontend/
+node_modules/
+
+# Test & eval artefacts
+tests/
+eval_runs/
+
+# Logs
+*.log
+
+# Git metadata
+.git/
+.gitignore
+.github/
+
+# Docs
+*.md
+NOTES.md
+
+# models/ is intentionally NOT excluded — health_scorer.ubj and
+# feature_baseline.parquet are committed and must land in the image.
