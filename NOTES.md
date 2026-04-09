@@ -27,6 +27,36 @@ A judge bug looks identical to an agent bug until you read the failure rationale
 investigate before fixing the agent — the fix may be in the harness.
 
 
+## Lessons learned from M4
+
+- **Right-size infrastructure to the project.** M4 started with a Cloud Run plan that
+  required Cloud SQL, Workload Identity Federation, IAM bindings, Artifact Registry,
+  Secret Manager, and service accounts — a week of setup for a solo project. Pivoting to
+  Railway (existing account, Postgres add-on, four env vars) shipped the same outcome in
+  a day. The lesson isn't that GCP is wrong; it's that the setup cost should be
+  proportionate to the project's scale and team size.
+
+- **Leave the migration path documented, not just deleted.** `entrypoint.sh` still
+  contains the GCS model-pull branch (`GCS_BUCKET` activates it) and `NOTES.md` records
+  the full GCP setup checklist. If the project outgrows Railway, the path forward is
+  documented rather than buried in git history.
+
+- **Two-tier eval pays off in CI.** The smoke tier (5 cases, ~2 min) catches regressions
+  on every PR without burning Anthropic API budget. The full tier (31 cases, ~20 min)
+  runs only on merge to main before deploy. The tier split cost one afternoon and will
+  save time on every future PR.
+
+- **Prometheus metric placement matters.** Defining all metric objects in one module
+  (`src/monitoring/prometheus.py`) and importing them into the modules that record them
+  prevents duplicate-registration errors on module reload and makes the full metric
+  inventory immediately visible in one file.
+
+- **Grafana Agent as a sidecar is the simplest scraping path for Railway.** No
+  Pushgateway, no inbound firewall rules — the agent scrapes `/metrics` outbound from
+  within the same network and remote-writes to Grafana Cloud. One YAML file and four
+  env vars.
+
+
 ## Multi-turn evaluation (deferred)
 
 The current `/agent/chat` endpoint is stateless — each request is a fresh conversation.

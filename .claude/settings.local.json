@@ -9,7 +9,9 @@
       "Bash(.venv/bin/alembic revision:*)",
       "Bash(.venv/bin/pytest tests/unit/test_tools.py tests/integration/test_agent_loop.py -v 2>&1)",
       "Bash(.venv/bin/alembic upgrade:*)",
-      "Bash(psql:*)"
+      "Bash(psql:*)",
+      "Bash(.venv/bin/python -m scripts.run_eval --ids G2 2>&1)",
+      "Bash(.venv/bin/python -m scripts.run_eval 2>&1)"
     ]
   }
 }
