@@ -65,6 +65,7 @@ RUN pip install --upgrade pip && pip install --no-index --find-links /wheels por
     && rm -rf /wheels
 
 COPY alembic.ini ./
+COPY alembic/ ./alembic/
 COPY scripts/entrypoint.sh ./entrypoint.sh
 RUN chmod +x entrypoint.sh
 
