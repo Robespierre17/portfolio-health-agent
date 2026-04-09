@@ -79,8 +79,8 @@ async def run_agent(
             model=settings.anthropic_model,
             max_tokens=2048,
             system=SYSTEM_PROMPT,
-            tools=TOOL_SCHEMAS,
-            messages=messages,
+            tools=TOOL_SCHEMAS,  # type: ignore[arg-type]
+            messages=messages,  # type: ignore[arg-type]
         )
 
         total_input_tokens += response.usage.input_tokens
