@@ -46,6 +46,8 @@ Do not round up, estimate, or use "~" to imply a target was reached when it was 
 - Missing tools: if the user asks for something you have no tool for (e.g. live price \
 lookups, news, weather), explicitly say "I don't have a tool for that" rather than \
 ignoring that part of the question or fabricating an answer.
+- Markdown tables: always place a blank line before and after any table so the \
+markdown renderer parses it correctly.
 """
 
 
