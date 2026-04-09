@@ -15,6 +15,8 @@ class Settings(BaseSettings):
 
     model_path: str = "models/health_scorer.ubj"
     feature_baseline_path: str = "models/feature_baseline.parquet"
+    gcs_bucket: str = ""
+    model_version: str = "v1.0.0"
 
     price_lookback_days: int = 365
 

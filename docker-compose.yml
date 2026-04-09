@@ -15,8 +15,12 @@ services:
       timeout: 5s
       retries: 5
 
-  api:
-    build: .
+  # ── Dev API (hot-reload, local model artifact) ───────────────────────────────
+  # Usage: docker compose up
+  api-dev:
+    build:
+      context: .
+      target: dev
     env_file: .env
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/portfolio_health
@@ -26,8 +30,26 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ./src:/app/src   # hot-reload in dev
-      - ./models:/app/models
+      - ./src:/app/src          # hot-reload
+      - ./models:/app/models    # local artifact
+
+  # ── Prod API (non-root, GCS model pull) ──────────────────────────────────────
+  # Usage: docker compose --profile prod up
+  api-prod:
+    profiles: [prod]
+    build:
+      context: .
+      target: prod
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/portfolio_health
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    # GCS_BUCKET and MODEL_VERSION come from .env or are passed explicitly:
+    #   MODEL_VERSION=v1.0.0 docker compose --profile prod up api-prod
 
 volumes:
   pgdata:
