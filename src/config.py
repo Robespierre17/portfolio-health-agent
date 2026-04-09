@@ -23,5 +23,8 @@ class Settings(BaseSettings):
     psi_threshold: float = 0.2
     score_drift_threshold: float = 10.0
 
+    # Frontend — set to Vercel deployment URL in production so CORS allows it
+    frontend_url: str = ""
+
 
 settings = Settings()
