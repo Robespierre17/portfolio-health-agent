@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from src.ml.predict import score_portfolio
+from src.monitoring.prometheus import health_score_histogram
 
 router = APIRouter()
 
@@ -29,4 +30,5 @@ async def score(req: ScoreRequest):
         raise HTTPException(status_code=422, detail="Could not fetch prices for given tickers")
 
     result = score_portfolio(prices, req.weights)
+    health_score_histogram.observe(result["score"])
     return result

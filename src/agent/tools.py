@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config import settings
 from src.db.models import Holding, Portfolio
 from src.ml.predict import score_portfolio
+from src.monitoring.prometheus import health_score_histogram
 
 # ── Tool schemas (passed to Anthropic API as tools=) ─────────────────────────
 
@@ -163,6 +164,7 @@ async def get_health_score(
         return {"error": "Could not fetch price data for the portfolio's holdings."}
 
     result = score_portfolio(prices, weights)
+    health_score_histogram.observe(result["score"])
     result["portfolio_id"] = portfolio_id
     result["lookback_days"] = lookback_days
     return result

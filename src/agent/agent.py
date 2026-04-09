@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import Any
 
 import anthropic
@@ -21,6 +22,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.agent.tools import TOOL_SCHEMAS, dispatch
 from src.config import settings
+from src.monitoring.prometheus import (
+    agent_latency_seconds,
+    agent_tool_calls_total,
+    agent_tokens_total,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +69,7 @@ async def run_agent(
     tool_call_log: list[dict] = []
     total_input_tokens = 0
     total_output_tokens = 0
+    t0 = time.monotonic()
 
     for turn in range(max_turns):
         response = await client.messages.create(
@@ -86,6 +93,7 @@ async def run_agent(
 
         if response.stop_reason == "end_turn":
             answer = _extract_text(response.content)
+            _record_metrics(t0, total_input_tokens, total_output_tokens)
             return {
                 "answer": answer,
                 "tool_calls": tool_call_log,
@@ -105,6 +113,7 @@ async def run_agent(
             tool_results = []
             for block in tool_use_blocks:
                 logger.info("Calling tool: %s(%s)", block.name, block.input)
+                agent_tool_calls_total.labels(tool=block.name).inc()
                 result = await dispatch(block.name, block.input, db=db)
                 tool_call_log.append({"name": block.name, "input": block.input, "result": result})
                 tool_results.append({
@@ -120,11 +129,18 @@ async def run_agent(
         logger.warning("Unexpected stop_reason: %s", response.stop_reason)
         break
 
+    _record_metrics(t0, total_input_tokens, total_output_tokens)
     return {
         "answer": "Agent reached maximum turns without a final answer.",
         "tool_calls": tool_call_log,
         "usage": {"input_tokens": total_input_tokens, "output_tokens": total_output_tokens},
     }
+
+
+def _record_metrics(t0: float, input_tokens: int, output_tokens: int) -> None:
+    agent_latency_seconds.observe(time.monotonic() - t0)
+    agent_tokens_total.labels(direction="input").inc(input_tokens)
+    agent_tokens_total.labels(direction="output").inc(output_tokens)
 
 
 def _extract_text(content: list) -> str:
