@@ -19,7 +19,8 @@
       "Bash(npm install:*)",
       "Bash(railway:*)",
       "Bash(railway link:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git tag:*)"
     ]
   }
 }
