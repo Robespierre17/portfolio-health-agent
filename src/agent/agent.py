@@ -24,8 +24,8 @@ from src.agent.tools import TOOL_SCHEMAS, dispatch
 from src.config import settings
 from src.monitoring.prometheus import (
     agent_latency_seconds,
-    agent_tool_calls_total,
     agent_tokens_total,
+    agent_tool_calls_total,
     agent_turns_histogram,
 )
 

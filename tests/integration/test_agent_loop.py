@@ -6,7 +6,6 @@ Tests assert tool dispatch, message threading, and response shape.
 """
 from __future__ import annotations
 
-import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -117,7 +116,7 @@ async def test_agent_max_turns_guard():
     """Agent stops after max_turns without infinite looping."""
     always_tool = _make_response(
         "tool_use",
-        [_tool_use_block("tu_x", "explain_feature", {"feature_name": "sharpe", "feature_value": 1.0})],
+        [_tool_use_block("tu_x", "explain_feature", {"feature_name": "sharpe", "feature_value": 1.0})],  # noqa: E501
     )
 
     with patch("src.agent.agent.anthropic.AsyncAnthropic") as mock_cls:

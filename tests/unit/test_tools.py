@@ -2,11 +2,8 @@
 from __future__ import annotations
 
 import pytest
-import pandas as pd
-import numpy as np
 
-from src.agent.tools import explain_feature, _generate_suggestions, _apply_suggestions, dispatch
-
+from src.agent.tools import _apply_suggestions, _generate_suggestions, dispatch, explain_feature
 
 # ── explain_feature ───────────────────────────────────────────────────────────
 

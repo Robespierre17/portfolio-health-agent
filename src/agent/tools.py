@@ -10,8 +10,7 @@ import yfinance as yf
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config import settings
-from src.db.models import Holding, Portfolio
+from src.db.models import Holding
 from src.ml.predict import score_portfolio
 from src.monitoring.prometheus import health_score_histogram
 
@@ -40,7 +39,9 @@ TOOL_SCHEMAS = [
     },
     {
         "name": "query_holdings",
-        "description": "Fetch the current holdings (ticker + weight) for a portfolio from the database.",
+        "description": (
+            "Fetch the current holdings (ticker + weight) for a portfolio from the database."
+        ),
         "input_schema": {
             "type": "object",
             "properties": {
@@ -283,7 +284,8 @@ def _generate_suggestions(
         "avg_correlation":   features["avg_correlation"],            # higher = worse
         "volatility":        min(features["volatility"] / 0.60, 1),  # normalise to 0–1
         "max_drawdown":      min(abs(features["max_drawdown"]) / 0.80, 1),
-        "sharpe":            max(0, 1 - (features["sharpe"] + 2) / 5),  # lower sharpe = higher penalty
+        # lower sharpe = higher penalty
+        "sharpe":            max(0, 1 - (features["sharpe"] + 2) / 5),
     }
     worst = max(penalties, key=penalties.__getitem__)
 

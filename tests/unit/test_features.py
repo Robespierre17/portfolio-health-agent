@@ -6,8 +6,8 @@ import pytest
 from src.ml.features import (
     annualised_volatility,
     avg_pairwise_correlation,
-    concentration_hhi,
     compute_features,
+    concentration_hhi,
     max_drawdown,
     portfolio_returns,
     sharpe_ratio,
@@ -76,4 +76,6 @@ def test_correlation_two_identical_series():
 def test_compute_features_keys(synthetic_prices):
     weights = {"AAPL": 0.4, "MSFT": 0.4, "GOOG": 0.2}
     features = compute_features(synthetic_prices, weights)
-    assert set(features.keys()) == {"volatility", "max_drawdown", "sharpe", "concentration_hhi", "avg_correlation"}
+    assert set(features.keys()) == {
+        "volatility", "max_drawdown", "sharpe", "concentration_hhi", "avg_correlation"
+    }

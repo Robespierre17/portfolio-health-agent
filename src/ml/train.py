@@ -21,9 +21,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, r2_score
-from sklearn.calibration import calibration_curve
+from sklearn.model_selection import train_test_split
 
 from src.ml.features import FEATURE_COLS  # single source of truth
 

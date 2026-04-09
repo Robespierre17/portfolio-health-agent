@@ -1,9 +1,9 @@
 """Unit tests for PSI monitoring."""
 import numpy as np
+import pandas as pd
 import pytest
 
-from src.monitoring.metrics import psi, compute_all_psi
-import pandas as pd
+from src.monitoring.metrics import compute_all_psi, psi
 
 
 def test_psi_identical_distributions():
@@ -20,7 +20,9 @@ def test_psi_very_different_distributions():
 
 def test_compute_all_psi_returns_dict():
     rng = np.random.default_rng(2)
-    baseline = pd.DataFrame({"vol": rng.normal(0.2, 0.05, 500), "sharpe": rng.normal(1.0, 0.3, 500)})
+    baseline = pd.DataFrame({
+        "vol": rng.normal(0.2, 0.05, 500), "sharpe": rng.normal(1.0, 0.3, 500)
+    })
     current = pd.DataFrame({"vol": rng.normal(0.2, 0.05, 100), "sharpe": rng.normal(1.0, 0.3, 100)})
     result = compute_all_psi(baseline, current)
     assert set(result.keys()) == {"vol", "sharpe"}

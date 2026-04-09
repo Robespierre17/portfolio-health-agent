@@ -1,6 +1,4 @@
 """Smoke test for training pipeline — fast, no I/O."""
-import numpy as np
-import pytest
 
 from src.ml.train import build_training_data, train
 

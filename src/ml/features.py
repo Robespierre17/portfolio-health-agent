@@ -9,7 +9,6 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-
 TRADING_DAYS = 252
 FEATURE_COLS = ["volatility", "max_drawdown", "sharpe", "concentration_hhi", "avg_correlation"]
 

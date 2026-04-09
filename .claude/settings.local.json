@@ -11,7 +11,9 @@
       "Bash(.venv/bin/alembic upgrade:*)",
       "Bash(psql:*)",
       "Bash(.venv/bin/python -m scripts.run_eval --ids G2 2>&1)",
-      "Bash(.venv/bin/python -m scripts.run_eval 2>&1)"
+      "Bash(.venv/bin/python -m scripts.run_eval 2>&1)",
+      "Bash(ruff check:*)",
+      "Bash(git add:*)"
     ]
   }
 }

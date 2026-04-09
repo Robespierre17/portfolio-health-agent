@@ -7,10 +7,8 @@ extended without touching the verdict logic.
 """
 from __future__ import annotations
 
-import json
 import logging
 import re
-from pathlib import Path
 from typing import Any
 
 from src.agent.agent import run_agent
@@ -119,7 +117,8 @@ def compute_verdict(case: dict, regex_result: dict, tool_result: dict, judge_res
 
     completeness = judge_result.get("completeness", 0)
     if completeness < 2:
-        failures.append(f"completeness {completeness} < 2: {judge_result.get('completeness_rationale', '')}")
+        rationale = judge_result.get("completeness_rationale", "")
+        failures.append(f"completeness {completeness} < 2: {rationale}")
 
     refusal = judge_result.get("refusal", "N_A")
     if refusal == "FAIL":
