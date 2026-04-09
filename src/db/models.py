@@ -1,7 +1,7 @@
 """SQLAlchemy ORM models."""
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -59,3 +59,18 @@ class HealthScore(Base):
     avg_correlation: Mapped[float] = mapped_column(Float)
 
     portfolio: Mapped["Portfolio"] = relationship("Portfolio", back_populates="scores")
+
+
+class DriftRun(Base):
+    """One row per feature per PSI drift-check run."""
+
+    __tablename__ = "drift_runs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    run_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
+    feature: Mapped[str] = mapped_column(String(50), nullable=False)
+    psi: Mapped[float] = mapped_column(Float, nullable=False)
+    baseline_n: Mapped[int] = mapped_column(Integer, nullable=False)
+    current_n: Mapped[int] = mapped_column(Integer, nullable=False)
+    alert: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    window_days: Mapped[int] = mapped_column(Integer, nullable=False)
