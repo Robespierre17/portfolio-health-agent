@@ -1,19 +1,30 @@
 # Technical Notes & Future Milestones
 
-## Lesson learned: eval frameworks need debugging too
+## Lessons learned from M3
 
-First eval run (2026-04-08, run `20260408_121257`) flagged F7 as a failure. Investigation
-showed the agent was asking for clarification on a genuinely ambiguous question ("What is
-the health score?" with no portfolio_id in context) — correct behaviour by design, since
-F1/F2/F7 were explicitly built to prevent the agent from guessing or defaulting.
+First full eval run (2026-04-08) found **3 agent bugs** and **2 harness bugs**.
 
-The judge's Completeness rubric incorrectly treated any clarifying question as score 1
-(incomplete). Fix: added a "genuine ambiguity" special rule to the judge prompt
-distinguishing clarification (correct) from refusal with sufficient context (incorrect).
+**Agent bugs fixed:**
+1. `suggest_rebalance` hallucinated a projected score equal to the target when the target
+   was unreachable — added `target_reachable: bool` and `best_achievable_score: float` to
+   the return value, and added an explicit system prompt instruction to never claim a target
+   was met unless `target_reachable == True`.
+2. Agent ignored out-of-scope parts of questions (e.g. price lookups) rather than flagging
+   the gap — system prompt updated with explicit missing-tool instruction.
+3. Judge completeness rubric incorrectly scored clarifying questions as incomplete (score 1)
+   even when the question was genuinely ambiguous with no portfolio context — rubric updated
+   with a "genuine ambiguity" carve-out.
 
-**Takeaway:** eval frameworks are code. They contain bugs. A failure that doesn't make
-sense in context is as likely to be a judge bug as an agent bug — investigate before
-fixing the agent.
+**Harness bugs fixed:**
+1. B3 `expected_tool_inputs` required `feature_value: 0.12` exactly, but the agent
+   correctly used the portfolio's actual volatility instead of the question's hypothetical.
+   Fix: assert only `feature_name`, not the value.
+2. G2 regex `score[^.!?\\n]*100` matched `"62.17 / 100"` (score denominator), not a
+   fabricated perfect score. Fix: tightened to `score\\s*[=:is]*\\s*100(?!\\s*/)`.
+
+**Takeaway:** eval frameworks need the same debugging discipline as the code they measure.
+A judge bug looks identical to an agent bug until you read the failure rationale. Always
+investigate before fixing the agent — the fix may be in the harness.
 
 
 ## Multi-turn evaluation (deferred)
